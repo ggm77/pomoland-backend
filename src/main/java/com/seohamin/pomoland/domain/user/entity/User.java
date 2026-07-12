@@ -1,6 +1,7 @@
 package com.seohamin.pomoland.domain.user.entity;
 
 import com.seohamin.pomoland.domain.map.tile.entity.Tile;
+import com.seohamin.pomoland.domain.session.entity.Session;
 import com.seohamin.pomoland.global.constant.Role;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -37,6 +38,8 @@ public class User {
     private List<Tile> tiles = new ArrayList<>();
 
     // 공부 기록
+    @OneToMany(mappedBy = "member",  cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Session> sessions = new ArrayList<>();
 
     // 유저 Role
     @Enumerated(EnumType.STRING)
