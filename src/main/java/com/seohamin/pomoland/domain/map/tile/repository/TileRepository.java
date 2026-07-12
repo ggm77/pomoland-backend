@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface TileRepository extends JpaRepository<Tile, Integer> {
     Optional<Tile> findByOwnerIdAndIsSpawnPoint(final Long ownerId, final Boolean isSpawnPoint);
+    Optional<Tile> findByXAndY(final Integer x, final Integer y);
 }
