@@ -5,6 +5,7 @@ import com.seohamin.pomoland.domain.map.tile.entity.Tile;
 import com.seohamin.pomoland.domain.map.tile.repository.TileRepository;
 import com.seohamin.pomoland.domain.user.dto.UserRequestDto;
 import com.seohamin.pomoland.domain.user.dto.UserResponseDto;
+import com.seohamin.pomoland.domain.user.dto.UserSpawnPointRequestDto;
 import com.seohamin.pomoland.domain.user.entity.User;
 import com.seohamin.pomoland.domain.user.repository.UserRepository;
 import com.seohamin.pomoland.global.exception.CustomException;
@@ -102,5 +103,51 @@ public class UserService {
 
         // 3) 삭제
         userRepository.deleteById(userId);
+    }
+
+    /**
+     * 유저 스폰 포인트 만드는 메서드
+     * @param userSpawnPointRequestDto 스폰 포인트 정보 담긴 DTO
+     */
+    @Transactional
+    public void createUserSpawnPoint(
+            final String userIdStr,
+            final UserSpawnPointRequestDto userSpawnPointRequestDto
+    ) {
+        // 1) null 검사
+        if (userSpawnPointRequestDto == null || userIdStr == null || userIdStr.isBlank()) {
+            throw new CustomException(ExceptionCode.INVALID_REQUEST);
+        }
+
+        // 2) 파싱
+        final Long userId = Long.parseLong(userIdStr);
+        final Integer x = userSpawnPointRequestDto.x();
+        final Integer y = userSpawnPointRequestDto.y();
+
+        // 3) 유저 조회
+        final User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ExceptionCode.USER_NOT_EXIST));
+
+        // 4) 스폰 포인트 이미 설정 했는지 확인
+        if (tileRepository.existsByOwnerIdAndIsSpawnPoint(userId, true)){
+            throw new CustomException(ExceptionCode.SPAWNPOINT_ALREADY_EXIST);
+        }
+
+        // 5) 해당 위치가 이미 점령 되어있는지 확인
+        if (tileRepository.existsByXAndY(x, y)) {
+            throw new CustomException(ExceptionCode.TILE_ALREADY_OCCUPIED);
+        }
+
+        // 6) 타일 엔티티 생성
+        final Tile tile = Tile.builder()
+                .x(x)
+                .y(y)
+                .owner(user)
+                .defensePower(9999)
+                .isSpawnPoint(true)
+                .build();
+
+        // 7) 저장
+        tileRepository.save(tile);
     }
 }

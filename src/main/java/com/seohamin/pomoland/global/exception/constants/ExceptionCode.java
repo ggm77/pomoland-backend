@@ -19,6 +19,8 @@ public enum ExceptionCode {
     INVALID_MAX_DISTANCE(HttpStatus.BAD_REQUEST, "올바르지 않은 최대 거리입니다."),
     INVALID_PROVIDER(HttpStatus.BAD_REQUEST, "잘못된 OAuth provider입니다."),
     TILE_NOT_EXIST(HttpStatus.BAD_REQUEST, "타일이 존재하지 않습니다."),
+    SPAWNPOINT_ALREADY_EXIST(HttpStatus.BAD_REQUEST, "스폰포인트가 이미 존재합니다."),
+    TILE_ALREADY_OCCUPIED(HttpStatus.BAD_REQUEST, "타일이 이미 점령 되었습니다."),
 
 
     AUTHENTICATION_ERROR(HttpStatus.UNAUTHORIZED, "인증 되지 않았습니다."),

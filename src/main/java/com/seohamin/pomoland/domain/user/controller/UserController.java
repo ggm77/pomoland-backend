@@ -2,6 +2,7 @@ package com.seohamin.pomoland.domain.user.controller;
 
 import com.seohamin.pomoland.domain.user.dto.UserRequestDto;
 import com.seohamin.pomoland.domain.user.dto.UserResponseDto;
+import com.seohamin.pomoland.domain.user.dto.UserSpawnPointRequestDto;
 import com.seohamin.pomoland.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -51,6 +52,18 @@ public class UserController {
     ) {
 
         userService.deleteUser(userIdStr);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    // 스폰포인트 생성 API
+    @PostMapping("/users/me/spawnpoint")
+    public ResponseEntity<Void> createUserSpawnPoint(
+            @AuthenticationPrincipal final String userIdStr,
+            @RequestBody final UserSpawnPointRequestDto userSpawnPointRequestDto
+    ) {
+
+        userService.createUserSpawnPoint(userIdStr, userSpawnPointRequestDto);
 
         return ResponseEntity.noContent().build();
     }
