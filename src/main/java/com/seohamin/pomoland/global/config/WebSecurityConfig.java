@@ -33,7 +33,8 @@ public class WebSecurityConfig {
                                         "/api/v1/auth/**",
                                         "/api/swagger/**",
                                         "/api/swagger-ui/**",
-                                        "/oauth-test.html"
+                                        "/oauth-test.html",
+                                        "/oauth2/callback/**"
                                 ).permitAll()
                                 .anyRequest().authenticated()
                 );
