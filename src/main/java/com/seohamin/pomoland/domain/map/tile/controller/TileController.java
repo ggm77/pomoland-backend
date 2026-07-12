@@ -1,7 +1,7 @@
 package com.seohamin.pomoland.domain.map.tile.controller;
 
 import com.seohamin.pomoland.domain.map.tile.dto.MapResponseDto;
-import com.seohamin.pomoland.domain.map.tile.dto.TileOccupyRequestDto;
+import com.seohamin.pomoland.domain.map.tile.dto.TileRequestDto;
 import com.seohamin.pomoland.domain.map.tile.dto.TileResponseDto;
 import com.seohamin.pomoland.domain.map.tile.service.TileService;
 import lombok.RequiredArgsConstructor;
@@ -39,10 +39,24 @@ public class TileController {
             @AuthenticationPrincipal final String userIdStr,
             @PathVariable final Integer x,
             @PathVariable final Integer y,
-            @RequestBody final TileOccupyRequestDto tileOccupyRequestDto
+            @RequestBody final TileRequestDto tileRequestDto
     ) {
 
-        tileService.occupy(userIdStr, x, y, tileOccupyRequestDto);
+        tileService.occupy(userIdStr, x, y, tileRequestDto);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    // 타일 방어 API
+    @PostMapping("/map/tiles/{x}/{y}/defense")
+    public ResponseEntity<Void> defense(
+            @AuthenticationPrincipal final String userIdStr,
+            @PathVariable final Integer x,
+            @PathVariable final Integer y,
+            @RequestBody final TileRequestDto tileRequestDto
+    ) {
+
+        tileService.defense(userIdStr, x, y, tileRequestDto);
 
         return ResponseEntity.noContent().build();
     }
