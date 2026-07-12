@@ -37,6 +37,9 @@ public class OauthService {
     @Value("${oauth2.google.web_client_secret}")
     private String GOOGLE_WEB_CLIENT_SECRET;
 
+    @Value("${oauth2.google.redirect_url}")
+    private String GOOGLE_REDIRECT_URI;
+
     private final AppleKeyGenerator appleKeyGenerator;
     private final AppleAuthClient appleAuthClient;
     private final JwtProvider jwtProvider;
@@ -121,7 +124,7 @@ public class OauthService {
                     GOOGLE_WEB_CLIENT_ID,
                     GOOGLE_WEB_CLIENT_SECRET,
                     code,
-                    ""
+                    GOOGLE_REDIRECT_URI
             ).execute();
         } catch (IOException ex) {
             throw new CustomException(ExceptionCode.GOOGLE_REQUEST_ERROR);

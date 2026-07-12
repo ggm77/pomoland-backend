@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Pomoland OAuth2 테스트</title>
+<style>
+  body { font-family: sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; }
+  button { padding: 10px 16px; margin-right: 8px; cursor: pointer; }
+  input { padding: 6px; width: 200px; }
+  pre { background: #f4f4f4; padding: 12px; white-space: pre-wrap; word-break: break-all; }
+  .row { margin: 16px 0; }
+  code { background: #eee; padding: 2px 4px; }
+</style>
+</head>
+<body>
+<h1>OAuth2 로그인 테스트</h1>
+
+<p>이 페이지의 접속 주소(<code id="selfUrl"></code>)가 그대로 <b>redirect_uri</b>로 사용됩니다.
+이 값이 구글 콘솔 / 애플 개발자 콘솔의 승인된 리디렉션 URI, 그리고 <code>application.yaml</code>의
+<code>oauth2.google.redirect_url</code> / <code>oauth2.apple.redirect_url</code>과 정확히 일치해야 로그인이 성공합니다.</p>
+
+<div class="row">
+  <label>회원가입 시 사용할 이름: <input id="nameInput" placeholder="홍길동"></label>
+</div>
+
+<div class="row">
+  <button id="googleBtn">구글 로그인 테스트</button>
+  <button id="appleBtn">애플 로그인 테스트</button>
+</div>
+
+<div class="row">
+  <h2>결과</h2>
+  <pre id="result">(아직 없음)</pre>
+</div>
+
+<script>
+  const GOOGLE_CLIENT_ID = "626562885515-istmdil675apt8udcgbvhgk016rt60v5.apps.googleusercontent.com";
+  const APPLE_CLIENT_ID = "com.seohamin.pomo-land";
+
+  const redirectUri = window.location.origin + window.location.pathname;
+  document.getElementById("selfUrl").textContent = redirectUri;
+
+  document.getElementById("nameInput").value = sessionStorage.getItem("oauthTestName") || "";
+
+  document.getElementById("googleBtn").addEventListener("click", () => {
+    sessionStorage.setItem("oauthTestProvider", "google");
+    sessionStorage.setItem("oauthTestName", document.getElementById("nameInput").value);
+
+    const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    url.searchParams.set("client_id", GOOGLE_CLIENT_ID);
+    url.searchParams.set("redirect_uri", redirectUri);
+    url.searchParams.set("response_type", "code");
+    url.searchParams.set("scope", "openid email profile");
+    url.searchParams.set("access_type", "offline");
+    url.searchParams.set("prompt", "consent");
+    window.location.href = url.toString();
+  });
+
+  document.getElementById("appleBtn").addEventListener("click", () => {
+    sessionStorage.setItem("oauthTestProvider", "apple");
+    sessionStorage.setItem("oauthTestName", document.getElementById("nameInput").value);
+
+    const url = new URL("https://appleid.apple.com/auth/authorize");
+    url.searchParams.set("client_id", APPLE_CLIENT_ID);
+    url.searchParams.set("redirect_uri", redirectUri);
+    url.searchParams.set("response_type", "code");
+    url.searchParams.set("response_mode", "query");
+    url.searchParams.set("scope", "");
+    window.location.href = url.toString();
+  });
+
+  async function handleCallback() {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    if (!code) return;
+
+    const provider = sessionStorage.getItem("oauthTestProvider");
+    const name = sessionStorage.getItem("oauthTestName") || "";
+    const resultEl = document.getElementById("result");
+
+    if (!provider) {
+      resultEl.textContent = "code는 받았지만 provider 정보가 없습니다 (세션이 끊겼을 수 있음). code=" + code;
+      return;
+    }
+
+    resultEl.textContent = provider + " 로그인 처리 중...";
+
+    try {
+      const res = await fetch(`/api/v1/auth/oauth2/${provider}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, name })
+      });
+      const body = await res.text();
+      resultEl.textContent = `HTTP ${res.status}\n\n${body}`;
+    } catch (err) {
+      resultEl.textContent = "요청 실패: " + err;
+    } finally {
+      sessionStorage.removeItem("oauthTestProvider");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }
+
+  handleCallback();
+</script>
+</body>
+</html>
