@@ -3,9 +3,7 @@ package com.seohamin.pomoland.domain.user.service;
 import com.seohamin.pomoland.domain.map.tile.dto.TileResponseDto;
 import com.seohamin.pomoland.domain.map.tile.entity.Tile;
 import com.seohamin.pomoland.domain.map.tile.repository.TileRepository;
-import com.seohamin.pomoland.domain.user.dto.UserRequestDto;
-import com.seohamin.pomoland.domain.user.dto.UserResponseDto;
-import com.seohamin.pomoland.domain.user.dto.UserSpawnPointRequestDto;
+import com.seohamin.pomoland.domain.user.dto.*;
 import com.seohamin.pomoland.domain.user.entity.User;
 import com.seohamin.pomoland.domain.user.repository.UserRepository;
 import com.seohamin.pomoland.global.exception.CustomException;
@@ -149,5 +147,44 @@ public class UserService {
 
         // 7) 저장
         tileRepository.save(tile);
+    }
+
+    /**
+     * 유저 설정 PUT하는 메서드
+     * @param userIdStr 유저 아이디 문자열
+     * @param userSettingRequestDto 변경할 설정들
+     * @return 변경된 설정 값
+     */
+    @Transactional
+    public UserSettingResponseDto updateUserSetting(
+            final String userIdStr,
+            final UserSettingRequestDto userSettingRequestDto
+    ) {
+        // 1) null 검사
+        if (
+                userIdStr == null || userIdStr.isBlank() || userSettingRequestDto == null
+        ) {
+            throw new CustomException(ExceptionCode.INVALID_REQUEST);
+        }
+
+        // 2) 파싱
+        final Long userId = Long.parseLong(userIdStr);
+
+        // 3) 유저 조회
+        final User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ExceptionCode.USER_NOT_EXIST));
+
+        // 4) 설정 변경
+        if (userSettingRequestDto.studyTime() != null) {
+            user.updateStudyTime(userSettingRequestDto.studyTime());
+        }
+        if (userSettingRequestDto.restTime() != null) {
+            user.updateRestTime(userSettingRequestDto.restTime());
+        }
+
+        return new UserSettingResponseDto(
+                userSettingRequestDto.studyTime(),
+                userSettingRequestDto.restTime()
+        );
     }
 }

@@ -65,6 +65,16 @@ public class User {
     @NotNull
     private Integer pomoComplete;
 
+    // 공부시간 설정 (분)
+    @Column(nullable = false)
+    @NotNull
+    private Integer studyTime;
+
+    // 쉬는시간 설정 (분)
+    @Column(nullable = false)
+    @NotNull
+    private Integer restTime;
+
     @CreatedDate
     @Column(nullable = false)
     private Instant createdAt;
@@ -86,6 +96,8 @@ public class User {
         this.point = point;
         this.pomoTry = pomoTry;
         this.pomoComplete = pomoComplete;
+        this.studyTime = 25;
+        this.restTime = 5;
     }
 
     public void updateUsername(final String username) {
@@ -106,5 +118,13 @@ public class User {
 
     public void plushPomoComplete(final Integer pomoComplete) {
         this.pomoComplete += 1;
+    }
+
+    public void updateStudyTime(final Integer studyTime) {
+        this.studyTime = studyTime;
+    }
+
+    public void updateRestTime(final Integer restTime) {
+        this.restTime = restTime;
     }
 }

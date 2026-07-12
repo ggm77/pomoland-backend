@@ -1,8 +1,6 @@
 package com.seohamin.pomoland.domain.user.controller;
 
-import com.seohamin.pomoland.domain.user.dto.UserRequestDto;
-import com.seohamin.pomoland.domain.user.dto.UserResponseDto;
-import com.seohamin.pomoland.domain.user.dto.UserSpawnPointRequestDto;
+import com.seohamin.pomoland.domain.user.dto.*;
 import com.seohamin.pomoland.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -66,5 +64,15 @@ public class UserController {
         userService.createUserSpawnPoint(userIdStr, userSpawnPointRequestDto);
 
         return ResponseEntity.noContent().build();
+    }
+
+    // 유저 설정 PUT API
+    @PutMapping("/users/me/settings")
+    public ResponseEntity<UserSettingResponseDto> updateUserSettings(
+            @AuthenticationPrincipal final String userIdStr,
+            @RequestBody final UserSettingRequestDto userSettingRequestDto
+    ) {
+
+        return ResponseEntity.ok(userService.updateUserSetting(userIdStr, userSettingRequestDto));
     }
 }
