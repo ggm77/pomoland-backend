@@ -187,4 +187,31 @@ public class UserService {
                 userSettingRequestDto.restTime()
         );
     }
+
+    /**
+     * 유저 설정 조회하는 메서드
+     * @param userIdStr 유저 아이디 문자열
+     * @return 유저의 설정
+     */
+    @Transactional
+    public UserSettingResponseDto getUserSetting(
+            final String userIdStr
+    ) {
+        // 1) null 검사
+        if (userIdStr == null || userIdStr.isBlank()) {
+            throw new CustomException(ExceptionCode.INVALID_REQUEST);
+        }
+
+        // 2) 파싱
+        final Long userId = Long.parseLong(userIdStr);
+
+        // 3) 유저 조회
+        final User user =  userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ExceptionCode.USER_NOT_EXIST));
+
+        return new UserSettingResponseDto(
+                user.getStudyTime(),
+                user.getRestTime()
+        );
+    }
 }

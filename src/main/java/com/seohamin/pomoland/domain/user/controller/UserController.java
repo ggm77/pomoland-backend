@@ -75,4 +75,13 @@ public class UserController {
 
         return ResponseEntity.ok(userService.updateUserSetting(userIdStr, userSettingRequestDto));
     }
+
+    // 유저 설정 조회 API
+    @GetMapping("/users/me/settings")
+    public ResponseEntity<UserSettingResponseDto> getUserSettings(
+            @AuthenticationPrincipal final String userIdStr
+    ) {
+
+        return ResponseEntity.ok(userService.getUserSetting(userIdStr));
+    }
 }
