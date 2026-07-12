@@ -32,9 +32,7 @@ public class WebSecurityConfig {
                                 .requestMatchers(
                                         "/api/v1/auth/**",
                                         "/api/swagger/**",
-                                        "/api/swagger-ui/**",
-                                        "/oauth-test.html",
-                                        "/oauth2/callback/**"
+                                        "/api/swagger-ui/**"
                                 ).permitAll()
                                 .anyRequest().authenticated()
                 );
