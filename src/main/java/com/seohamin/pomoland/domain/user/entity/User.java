@@ -1,5 +1,6 @@
 package com.seohamin.pomoland.domain.user.entity;
 
+import com.seohamin.pomoland.domain.map.tile.entity.Tile;
 import com.seohamin.pomoland.global.constant.Role;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -31,8 +32,10 @@ public class User {
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserOauth> userOauths = new ArrayList<>();
 
-    // 스폰 포인트
     // 보유 타일
+    @OneToMany(mappedBy = "owner",  cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Tile> tiles = new ArrayList<>();
+
     // 공부 기록
 
     // 유저 Role
@@ -88,6 +91,7 @@ public class User {
     public void updateUsername(final String username) {
         this.username = username;
     }
+
     public void plushPoint(final Integer point) {
         this.point += 1;
     }

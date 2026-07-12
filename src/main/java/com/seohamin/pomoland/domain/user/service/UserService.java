@@ -1,5 +1,8 @@
 package com.seohamin.pomoland.domain.user.service;
 
+import com.seohamin.pomoland.domain.map.tile.dto.TileResponseDto;
+import com.seohamin.pomoland.domain.map.tile.entity.Tile;
+import com.seohamin.pomoland.domain.map.tile.repository.TileRepository;
 import com.seohamin.pomoland.domain.user.dto.UserResponseDto;
 import com.seohamin.pomoland.domain.user.entity.User;
 import com.seohamin.pomoland.domain.user.repository.UserRepository;
@@ -13,6 +16,7 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final TileRepository tileRepository;
 
     /**
      * 유저 아이디로 유저 조회하는 메서드
@@ -32,17 +36,21 @@ public class UserService {
         final User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ExceptionCode.USER_NOT_EXIST));
 
+        // 4) 스폰 포인트 조회
+        final Tile spawnPoint = tileRepository.findByOwnerIdAndIsSpawnPoint(userId, true)
+                .orElse(null);
+
         // 일부는 mock
         return new UserResponseDto(
                 user.getId(),
                 user.getUsername(),
-                0,
+                user.getTiles().size(),
                 0,
                 0,
                 user.getPoint(),
                 user.getPomoTry(),
                 user.getPomoComplete(),
-                null
+                TileResponseDto.of(spawnPoint)
         );
     }
 }

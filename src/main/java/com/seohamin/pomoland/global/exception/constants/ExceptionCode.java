@@ -18,6 +18,7 @@ public enum ExceptionCode {
     INVALID_ENUM_VALUE(HttpStatus.BAD_REQUEST, "올바르지 않은 Enum입니다."),
     INVALID_MAX_DISTANCE(HttpStatus.BAD_REQUEST, "올바르지 않은 최대 거리입니다."),
     INVALID_PROVIDER(HttpStatus.BAD_REQUEST, "잘못된 OAuth provider입니다."),
+    TILE_NOT_EXIST(HttpStatus.BAD_REQUEST, "타일이 존재하지 않습니다."),
 
 
     AUTHENTICATION_ERROR(HttpStatus.UNAUTHORIZED, "인증 되지 않았습니다."),
