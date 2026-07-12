@@ -21,6 +21,8 @@ public enum ExceptionCode {
     TILE_NOT_EXIST(HttpStatus.BAD_REQUEST, "타일이 존재하지 않습니다."),
     SPAWNPOINT_ALREADY_EXIST(HttpStatus.BAD_REQUEST, "스폰포인트가 이미 존재합니다."),
     TILE_ALREADY_OCCUPIED(HttpStatus.BAD_REQUEST, "타일이 이미 점령 되었습니다."),
+    TILE_IS_SPAWNPOINT(HttpStatus.BAD_REQUEST,  "타일이 스폰 포인트입니다."),
+    CANNOT_OCCUPY(HttpStatus.BAD_REQUEST, "점령할 수 없습니다."),
 
 
     AUTHENTICATION_ERROR(HttpStatus.UNAUTHORIZED, "인증 되지 않았습니다."),

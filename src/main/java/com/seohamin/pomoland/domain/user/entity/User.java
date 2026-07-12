@@ -92,6 +92,10 @@ public class User {
         this.username = username;
     }
 
+    public void updatePoint(final Integer point) {
+        this.point = point;
+    }
+
     public void plushPoint(final Integer point) {
         this.point += 1;
     }

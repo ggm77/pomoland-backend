@@ -1,14 +1,13 @@
 package com.seohamin.pomoland.domain.map.tile.controller;
 
 import com.seohamin.pomoland.domain.map.tile.dto.MapResponseDto;
+import com.seohamin.pomoland.domain.map.tile.dto.TileOccupyRequestDto;
 import com.seohamin.pomoland.domain.map.tile.dto.TileResponseDto;
 import com.seohamin.pomoland.domain.map.tile.service.TileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -32,5 +31,19 @@ public class TileController {
     ) {
 
         return ResponseEntity.ok(tileService.getTile(x, y));
+    }
+
+    // 타일 점령 API
+    @PostMapping("/map/tiles/{x}/{y}/occupy")
+    public ResponseEntity<Void> occupy(
+            @AuthenticationPrincipal final String userIdStr,
+            @PathVariable final Integer x,
+            @PathVariable final Integer y,
+            @RequestBody final TileOccupyRequestDto tileOccupyRequestDto
+    ) {
+
+        tileService.occupy(userIdStr, x, y, tileOccupyRequestDto);
+
+        return ResponseEntity.noContent().build();
     }
 }
