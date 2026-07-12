@@ -3,6 +3,7 @@ package com.seohamin.pomoland.domain.user.service;
 import com.seohamin.pomoland.domain.map.tile.dto.TileResponseDto;
 import com.seohamin.pomoland.domain.map.tile.entity.Tile;
 import com.seohamin.pomoland.domain.map.tile.repository.TileRepository;
+import com.seohamin.pomoland.domain.user.dto.UserRequestDto;
 import com.seohamin.pomoland.domain.user.dto.UserResponseDto;
 import com.seohamin.pomoland.domain.user.entity.User;
 import com.seohamin.pomoland.domain.user.repository.UserRepository;
@@ -10,6 +11,7 @@ import com.seohamin.pomoland.global.exception.CustomException;
 import com.seohamin.pomoland.global.exception.constants.ExceptionCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -52,5 +54,53 @@ public class UserService {
                 user.getPomoComplete(),
                 TileResponseDto.of(spawnPoint)
         );
+    }
+
+    /**
+     * 유저 정보 수정하는 메서드
+     * @param userIdStr 유저 아이디 문자열
+     * @param userRequestDto 수정할 정보 담긴 DTO
+     */
+    @Transactional
+    public void updateUser(
+            final String userIdStr,
+            final UserRequestDto userRequestDto
+    ) {
+        // 1) null 검사
+        if (
+                userIdStr == null || userIdStr.isBlank() || userRequestDto == null
+        ) {
+            throw new CustomException(ExceptionCode.INVALID_REQUEST);
+        }
+
+        // 2) 유저 아이디 파싱
+        final Long userId = Long.parseLong(userIdStr);
+
+        // 3) 유저 조회
+        final User user =  userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ExceptionCode.USER_NOT_EXIST));
+
+        // 4) 유저 명 수정
+        if (userRequestDto.username() != null && !userRequestDto.username().isBlank()) {
+            user.updateUsername(userRequestDto.username());
+        }
+    }
+
+    /**
+     * 유저 삭제 메서드
+     * @param userIdStr 삭제할 유저 아이디 문자열
+     */
+    @Transactional
+    public void deleteUser(final String userIdStr) {
+        // 1) null 검사
+        if (userIdStr == null || userIdStr.isBlank()) {
+            throw new CustomException(ExceptionCode.INVALID_REQUEST);
+        }
+
+        // 2) 파싱
+        final Long userId = Long.parseLong(userIdStr);
+
+        // 3) 삭제
+        userRepository.deleteById(userId);
     }
 }

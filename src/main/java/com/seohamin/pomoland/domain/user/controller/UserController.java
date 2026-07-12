@@ -1,14 +1,12 @@
 package com.seohamin.pomoland.domain.user.controller;
 
+import com.seohamin.pomoland.domain.user.dto.UserRequestDto;
 import com.seohamin.pomoland.domain.user.dto.UserResponseDto;
 import com.seohamin.pomoland.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -32,5 +30,28 @@ public class UserController {
             @AuthenticationPrincipal final String userIdStr
     ) {
         return ResponseEntity.ok(userService.getUser(userIdStr));
+    }
+
+    // 내 정보 수정 API
+    @PatchMapping("/users/me")
+    public ResponseEntity<Void> updateUserMe(
+            @AuthenticationPrincipal final String userIdStr,
+            @RequestBody final UserRequestDto userRequestDto
+    ) {
+
+        userService.updateUser(userIdStr, userRequestDto);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    // 회원 탈퇴 API
+    @DeleteMapping("/users/me")
+    public ResponseEntity<Void> deleteUserMe(
+            @AuthenticationPrincipal final String userIdStr
+    ) {
+
+        userService.deleteUser(userIdStr);
+
+        return ResponseEntity.noContent().build();
     }
 }
