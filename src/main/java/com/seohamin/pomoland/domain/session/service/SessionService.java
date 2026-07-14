@@ -65,6 +65,9 @@ public class SessionService {
         // 6) 저장
         final Session savedSession = sessionRepository.save(session);
 
+        // 7) 유저에게 시도 횟수 추가해주기
+        user.plushPomoTry();
+
         return SessionResponseDto.of(savedSession);
     }
 
@@ -91,16 +94,21 @@ public class SessionService {
         final Session session = sessionRepository.findBySessionUuid(sessionUuid)
                 .orElseThrow(() -> new CustomException(ExceptionCode.SESSION_NOT_EXIST));
 
-        // 4) 현재 시각 저장
+        // 4) 자기 세션인지 확인
+        if (!session.getMember().getId().equals(userId)) {
+            throw new CustomException(ExceptionCode.FORBIDDEN_USER_RESOURCE_ACCESS);
+        }
+
+        // 5) 현재 시각 저장
         final Instant now = Instant.now();
 
-        // 5) 마지막 heartbeat로 부터 특정 시간 이내인지 판단 (유효한 세션인지 판단)
+        // 6) 마지막 heartbeat로 부터 특정 시간 이내인지 판단 (유효한 세션인지 판단)
         if (session.getLastHeartBeatAt().plusSeconds(HEARTBEAT_INTERVAL).isBefore(now)) {
             expireSession(session);
             throw new CustomException(ExceptionCode.SESSION_EXPIRED);
         }
 
-        // 6) 갱신
+        // 7) 갱신
         session.updateLastHeartBeatAt(now);
 
         return SessionResponseDto.of(session);
@@ -165,7 +173,12 @@ public class SessionService {
             throw new CustomException(ExceptionCode.FORBIDDEN_USER_RESOURCE_ACCESS);
         }
 
-        // 5) 포기 처리
+        // 5) 완료 되어있는지 확인
+        if (session.getIsComplete()) {
+            throw new CustomException(ExceptionCode.SESSION_ALREADY_COMPLETED);
+        }
+
+        // 6) 포기 처리
         session.updateIsRunning(false);
         session.updateIsComplete(false);
 
@@ -203,20 +216,33 @@ public class SessionService {
             throw new CustomException(ExceptionCode.FORBIDDEN_USER_RESOURCE_ACCESS);
         }
 
-        // 6) 살아있는 세션인지 확인
+        // 6) 이미 완료된 세션인지 확인
+        if (session.getIsComplete()) {
+            throw new CustomException(ExceptionCode.SESSION_ALREADY_COMPLETED);
+        }
+
+        // 7) 현재 시간
         final Instant now = Instant.now();
+
+        // 8) 완료 처리 할 수 있는 세션인지 확인
+        if (session.getEndAt().isAfter(now)) {
+            throw new CustomException(ExceptionCode.CANNOT_COMPLETE);
+        }
+
+        // 9) 살아있는 세션인지 확인
         if (session.getLastHeartBeatAt().plusSeconds(HEARTBEAT_INTERVAL).isBefore(now)) {
             expireSession(session);
             throw new CustomException(ExceptionCode.SESSION_EXPIRED);
         }
 
-        // 7) 완료 처리
+        // 10) 완료 처리
         session.updateLastHeartBeatAt(now);
         session.updateIsRunning(false);
         session.updateIsComplete(true);
 
-        // 8) 포인트 지급
+        // 11) 포인트 지급 및 완료 회수 추가
         user.plushPoint();
+        user.plushPomoTry();
 
         return SessionResponseDto.of(session);
     }

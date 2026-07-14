@@ -24,7 +24,7 @@ public class SessionController {
     }
 
     // 타이머 세션 유지하는 API
-    @GetMapping("/session/{sessionUuid}/heartbeat")
+    @PostMapping("/session/{sessionUuid}/heartbeat")
     public ResponseEntity<SessionResponseDto> heartbeat(
             @AuthenticationPrincipal final String userIdStr,
             @PathVariable final String sessionUuid
