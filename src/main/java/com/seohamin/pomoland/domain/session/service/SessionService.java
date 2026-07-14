@@ -102,8 +102,11 @@ public class SessionService {
         // 5) 현재 시각 저장
         final Instant now = Instant.now();
 
-        // 6) 마지막 heartbeat로 부터 특정 시간 이내인지 판단 (유효한 세션인지 판단)
-        if (session.getLastHeartBeatAt().plusSeconds(HEARTBEAT_INTERVAL).isBefore(now)) {
+        // 6) 마지막 heartbeat로 부터 특정 시간 이내인지 판단 & 유효한 세션인지 판단
+        if (
+                !session.getIsRunning() ||
+                session.getLastHeartBeatAt().plusSeconds(HEARTBEAT_INTERVAL).isBefore(now)
+        ) {
             expireSession(session);
             throw new CustomException(ExceptionCode.SESSION_EXPIRED);
         }
@@ -230,7 +233,10 @@ public class SessionService {
         }
 
         // 9) 살아있는 세션인지 확인
-        if (session.getLastHeartBeatAt().plusSeconds(HEARTBEAT_INTERVAL).isBefore(now)) {
+        if (
+                !session.getIsRunning() ||
+                session.getLastHeartBeatAt().plusSeconds(HEARTBEAT_INTERVAL).isBefore(now)
+        ) {
             expireSession(session);
             throw new CustomException(ExceptionCode.SESSION_EXPIRED);
         }
