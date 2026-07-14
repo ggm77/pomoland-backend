@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -46,12 +47,26 @@ public class SessionService {
         final User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ExceptionCode.USER_NOT_EXIST));
 
-        // 4) 시간 설정
+        // 4) 돌아가고 있는 세션 조회
         final Instant startAt = Instant.now();
+        final List<Session> runningSessions =
+                sessionRepository.findAllByIsRunningAndMemberId(true, userId);
+
+        // 5) heartbeat이 살아있는 세션이 있으면 새 세션 만들 수 없음
+        final boolean hasAliveSession = runningSessions.stream()
+                .anyMatch(runningSession -> !isHeartBeatExpired(runningSession, startAt));
+        if (hasAliveSession) {
+            throw new CustomException(ExceptionCode.ONLINE_SESSION_ALREADY_EXIST);
+        }
+
+        // 6) heartbeat이 끊긴 세션은 만료 처리
+        runningSessions.forEach(runningSession -> runningSession.updateIsRunning(false));
+
+        // 7) 시간 설정
         final Instant endAt = startAt.plusSeconds(user.getStudyTime() * 60L);
         final Instant lastHeartBeatAt = startAt;
 
-        // 5) 세션 엔티티 제작
+        // 8) 세션 엔티티 제작
         final Session session = Session.builder()
                 .sessionUuid(UUID.randomUUID().toString())
                 .member(user)
@@ -62,10 +77,10 @@ public class SessionService {
                 .isComplete(false)
                 .build();
 
-        // 6) 저장
+        // 9) 저장
         final Session savedSession = sessionRepository.save(session);
 
-        // 7) 유저에게 시도 횟수 추가해주기
+        // 10) 유저에게 시도 횟수 추가해주기
         user.plushPomoTry();
 
         return SessionResponseDto.of(savedSession);
@@ -108,7 +123,7 @@ public class SessionService {
         }
 
         // 7) 마지막 heartbeat로 부터 특정 시간 이내인지 판단 (유효한 세션인지 판단)
-        if (session.getLastHeartBeatAt().plusSeconds(HEARTBEAT_INTERVAL).isBefore(now)) {
+        if (isHeartBeatExpired(session, now)) {
             sessionExpireService.expireSession(sessionUuid);
             throw new CustomException(ExceptionCode.SESSION_EXPIRED);
         }
@@ -240,7 +255,7 @@ public class SessionService {
         }
 
         // 10) 살아있는 세션인지 확인
-        if (session.getLastHeartBeatAt().plusSeconds(HEARTBEAT_INTERVAL).isBefore(now)) {
+        if (isHeartBeatExpired(session, now)) {
             sessionExpireService.expireSession(sessionUuid);
             throw new CustomException(ExceptionCode.SESSION_EXPIRED);
         }
@@ -255,5 +270,15 @@ public class SessionService {
         user.plushPomoComplete();
 
         return SessionResponseDto.of(session);
+    }
+
+    /**
+     * heartbeat이 끊긴 세션인지 판단하는 메서드
+     * @param session 판단할 세션
+     * @param now 기준 시각
+     * @return 마지막 heartbeat으로부터 HEARTBEAT_INTERVAL이 지났으면 true
+     */
+    private boolean isHeartBeatExpired(final Session session, final Instant now) {
+        return session.getLastHeartBeatAt().plusSeconds(HEARTBEAT_INTERVAL).isBefore(now);
     }
 }

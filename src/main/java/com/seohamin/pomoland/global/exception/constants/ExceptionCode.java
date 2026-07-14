@@ -28,6 +28,7 @@ public enum ExceptionCode {
     SESSION_EXPIRED(HttpStatus.BAD_REQUEST, "세션이 만료 되었습니다."),
     SESSION_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "세션이 완료처리 되어있습니다."),
     CANNOT_COMPLETE(HttpStatus.BAD_REQUEST, "완료처리 할 수 없습니다."),
+    ONLINE_SESSION_ALREADY_EXIST(HttpStatus.BAD_REQUEST, "온라인인 세션이 이미 존재합니다."),
 
 
     AUTHENTICATION_ERROR(HttpStatus.UNAUTHORIZED, "인증 되지 않았습니다."),
