@@ -175,16 +175,22 @@ public class UserService {
                 .orElseThrow(() -> new CustomException(ExceptionCode.USER_NOT_EXIST));
 
         // 4) 설정 변경
-        if (userSettingRequestDto.studyTime() != null) {
+        if (
+                userSettingRequestDto.studyTime() != null
+                && userSettingRequestDto.studyTime() > 0
+        ) {
             user.updateStudyTime(userSettingRequestDto.studyTime());
         }
-        if (userSettingRequestDto.restTime() != null) {
+        if (
+                userSettingRequestDto.restTime() != null
+                && userSettingRequestDto.restTime() > 0
+        ) {
             user.updateRestTime(userSettingRequestDto.restTime());
         }
 
         return new UserSettingResponseDto(
-                userSettingRequestDto.studyTime(),
-                userSettingRequestDto.restTime()
+                user.getStudyTime(),
+                user.getRestTime()
         );
     }
 
