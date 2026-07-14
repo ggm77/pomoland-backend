@@ -9,7 +9,6 @@ import com.seohamin.pomoland.global.exception.CustomException;
 import com.seohamin.pomoland.global.exception.constants.ExceptionCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -24,6 +23,7 @@ public class SessionService {
 
     private final UserRepository userRepository;
     private final SessionRepository sessionRepository;
+    private final SessionExpireService sessionExpireService;
 
     /**
      * 타이머 세션 시작하는 메서드
@@ -102,16 +102,18 @@ public class SessionService {
         // 5) 현재 시각 저장
         final Instant now = Instant.now();
 
-        // 6) 마지막 heartbeat로 부터 특정 시간 이내인지 판단 & 유효한 세션인지 판단
-        if (
-                !session.getIsRunning() ||
-                session.getLastHeartBeatAt().plusSeconds(HEARTBEAT_INTERVAL).isBefore(now)
-        ) {
-            expireSession(session);
+        // 6) 이미 끝난 세션인지 확인
+        if (!session.getIsRunning()) {
             throw new CustomException(ExceptionCode.SESSION_EXPIRED);
         }
 
-        // 7) 갱신
+        // 7) 마지막 heartbeat로 부터 특정 시간 이내인지 판단 (유효한 세션인지 판단)
+        if (session.getLastHeartBeatAt().plusSeconds(HEARTBEAT_INTERVAL).isBefore(now)) {
+            sessionExpireService.expireSession(sessionUuid);
+            throw new CustomException(ExceptionCode.SESSION_EXPIRED);
+        }
+
+        // 8) 갱신
         session.updateLastHeartBeatAt(now);
 
         return SessionResponseDto.of(session);
@@ -232,35 +234,26 @@ public class SessionService {
             throw new CustomException(ExceptionCode.CANNOT_COMPLETE);
         }
 
-        // 9) 살아있는 세션인지 확인
-        if (
-                !session.getIsRunning() ||
-                session.getLastHeartBeatAt().plusSeconds(HEARTBEAT_INTERVAL).isBefore(now)
-        ) {
-            expireSession(session);
+        // 9) 이미 끝난 세션인지 확인
+        if (!session.getIsRunning()) {
             throw new CustomException(ExceptionCode.SESSION_EXPIRED);
         }
 
-        // 10) 완료 처리
+        // 10) 살아있는 세션인지 확인
+        if (session.getLastHeartBeatAt().plusSeconds(HEARTBEAT_INTERVAL).isBefore(now)) {
+            sessionExpireService.expireSession(sessionUuid);
+            throw new CustomException(ExceptionCode.SESSION_EXPIRED);
+        }
+
+        // 11) 완료 처리
         session.updateLastHeartBeatAt(now);
         session.updateIsRunning(false);
         session.updateIsComplete(true);
 
-        // 11) 포인트 지급 및 완료 회수 추가
+        // 12) 포인트 지급 및 완료 회수 추가
         user.plushPoint();
         user.plushPomoComplete();
 
         return SessionResponseDto.of(session);
-    }
-
-    /**
-     * 세션 만료 처리시키는 메서드
-     * 트랜잭션 때문에 별도로 분리
-     * @param session 만료시킬 세션
-     */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void expireSession(final Session session) {
-        session.updateIsRunning(false);
-        sessionRepository.save(session);
     }
 }
