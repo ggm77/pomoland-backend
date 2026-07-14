@@ -53,4 +53,13 @@ public class SessionController {
         return ResponseEntity.ok(sessionService.abandonSession(userIdStr, sessionUuid));
     }
 
+    // 타이머 세션 완료 API
+    @PostMapping("/session/{sessionUuid}/complete")
+    public ResponseEntity<SessionResponseDto> completeSession(
+            @AuthenticationPrincipal final String userIdStr,
+            @PathVariable final String sessionUuid
+    ) {
+
+        return ResponseEntity.ok(sessionService.completeSession(userIdStr, sessionUuid));
+    }
 }

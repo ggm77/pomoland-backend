@@ -111,15 +111,15 @@ public class User {
         this.point = point;
     }
 
-    public void plushPoint(final Integer point) {
+    public void plushPoint() {
         this.point += 1;
     }
 
-    public void plushPomoTry(final Integer pomoTry) {
+    public void plushPomoTry() {
         this.pomoTry += 1;
     }
 
-    public void plushPomoComplete(final Integer pomoComplete) {
+    public void plushPomoComplete() {
         this.pomoComplete += 1;
     }
 
