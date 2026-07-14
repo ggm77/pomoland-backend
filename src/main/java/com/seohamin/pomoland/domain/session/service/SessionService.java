@@ -242,7 +242,7 @@ public class SessionService {
 
         // 11) 포인트 지급 및 완료 회수 추가
         user.plushPoint();
-        user.plushPomoTry();
+        user.plushPomoComplete();
 
         return SessionResponseDto.of(session);
     }
