@@ -24,6 +24,8 @@ public enum ExceptionCode {
     TILE_IS_SPAWNPOINT(HttpStatus.BAD_REQUEST,  "타일이 스폰 포인트입니다."),
     CANNOT_OCCUPY(HttpStatus.BAD_REQUEST, "점령할 수 없습니다."),
     TILE_NOT_OWNED(HttpStatus.BAD_REQUEST, "타일을 소유하지 않았습니다."),
+    SESSION_NOT_EXIST(HttpStatus.BAD_REQUEST, "세션이 존재하지 않습니다."),
+    SESSION_EXPIRED(HttpStatus.BAD_REQUEST, "세션이 만료 되었습니다."),
 
 
     AUTHENTICATION_ERROR(HttpStatus.UNAUTHORIZED, "인증 되지 않았습니다."),

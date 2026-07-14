@@ -9,6 +9,7 @@ import com.seohamin.pomoland.global.exception.CustomException;
 import com.seohamin.pomoland.global.exception.constants.ExceptionCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -17,6 +18,9 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class SessionService {
+
+    // heartbeat 시간
+    private static final int HEARTBEAT_INTERVAL = 30;
 
     private final UserRepository userRepository;
     private final SessionRepository sessionRepository;
@@ -62,5 +66,54 @@ public class SessionService {
         final Session savedSession = sessionRepository.save(session);
 
         return SessionResponseDto.of(savedSession);
+    }
+
+    /**
+     * 세션 유지시키는 메서드
+     * @param userIdStr 요청 유저 아이디 문자열
+     * @param sessionUuid 세션 uuid
+     * @return 세션 정보
+     */
+    @Transactional
+    public SessionResponseDto heartbeat(
+            final String userIdStr,
+            final String sessionUuid
+    ) {
+        // 1) null 검사
+        if (userIdStr == null || userIdStr.isBlank() || sessionUuid == null || sessionUuid.isBlank()) {
+            throw new CustomException(ExceptionCode.INVALID_REQUEST);
+        }
+
+        // 2) 파싱
+        final Long userId = Long.parseLong(userIdStr);
+
+        // 3) 세션 조회
+        final Session session = sessionRepository.findBySessionUuid(sessionUuid)
+                .orElseThrow(() -> new CustomException(ExceptionCode.SESSION_NOT_EXIST));
+
+        // 4) 현재 시각 저장
+        final Instant now = Instant.now();
+
+        // 5) 마지막 heartbeat로 부터 특정 시간 이내인지 판단 (유효한 세션인지 판단)
+        if (session.getLastHeartBeatAt().plusSeconds(HEARTBEAT_INTERVAL).isBefore(now)) {
+            expireSession(session);
+            throw new CustomException(ExceptionCode.SESSION_EXPIRED);
+        }
+
+        // 6) 갱신
+        session.updateLastHeartBeatAt(now);
+
+        return SessionResponseDto.of(session);
+    }
+
+    /**
+     * 세션 만료 처리시키는 메서드
+     * 트랜잭션 때문에 별도로 분리
+     * @param session 만료시킬 세션
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void expireSession(final Session session) {
+        session.updateIsRunning(false);
+        sessionRepository.save(session);
     }
 }
