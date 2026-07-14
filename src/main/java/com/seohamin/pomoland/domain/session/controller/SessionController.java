@@ -42,4 +42,15 @@ public class SessionController {
 
         return ResponseEntity.ok(sessionService.getSession(userIdStr, sessionUuid));
     }
+
+    // 타이머 세션 포기 API
+    @PostMapping("/session/{sessionUuid}/abandon")
+    public ResponseEntity<SessionResponseDto> abandonSession(
+            @AuthenticationPrincipal final String userIdStr,
+            @PathVariable final String sessionUuid
+    ) {
+
+        return ResponseEntity.ok(sessionService.abandonSession(userIdStr, sessionUuid));
+    }
+
 }
