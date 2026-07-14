@@ -32,4 +32,14 @@ public class SessionController {
 
         return ResponseEntity.ok(sessionService.heartbeat(userIdStr, sessionUuid));
     }
+
+    // 타이머 세션 상태 조회 API
+    @GetMapping("/session/{sessionUuid}")
+    public ResponseEntity<SessionResponseDto> getSession(
+            @AuthenticationPrincipal final String userIdStr,
+            @PathVariable final String sessionUuid
+    ) {
+
+        return ResponseEntity.ok(sessionService.getSession(userIdStr, sessionUuid));
+    }
 }

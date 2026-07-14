@@ -107,6 +107,37 @@ public class SessionService {
     }
 
     /**
+     * 세션 정보 조회하는 메서드
+     * @param userIdStr 요청 유저 id
+     * @param sessionUuid 조회할 세션의 uuid
+     * @return 세션 정보
+     */
+    @Transactional(readOnly = true)
+    public SessionResponseDto getSession(
+            final String userIdStr,
+            final String sessionUuid
+    ) {
+        // 1) null 검사
+        if (userIdStr == null || userIdStr.isBlank() || sessionUuid == null || sessionUuid.isBlank()) {
+            throw new CustomException(ExceptionCode.INVALID_REQUEST);
+        }
+
+        // 2) 파싱
+        final Long userId = Long.parseLong(userIdStr);
+
+        // 3) 세션 조회
+        final Session session = sessionRepository.findBySessionUuid(sessionUuid)
+                .orElseThrow(() -> new CustomException(ExceptionCode.SESSION_NOT_EXIST));
+
+        // 4) 자기 세션인지 확인
+        if (!session.getMember().getId().equals(userId)) {
+            throw new CustomException(ExceptionCode.FORBIDDEN_USER_RESOURCE_ACCESS);
+        }
+
+        return SessionResponseDto.of(session);
+    }
+
+    /**
      * 세션 만료 처리시키는 메서드
      * 트랜잭션 때문에 별도로 분리
      * @param session 만료시킬 세션
