@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -265,8 +266,10 @@ public class SessionService {
         session.updateIsRunning(false);
         session.updateIsComplete(true);
 
-        // 12) 포인트 지급 및 완료 회수 추가
-        user.plushPoint();
+        // 12) 포인트 지급 및 완료 회수 추가 (5분당 2포인트, 25분당 10포인트)
+        final long sessionMinutes = Duration.between(session.getStartAt(), session.getEndAt()).toMinutes();
+        final int earnedPoint = (int) (sessionMinutes / 5) * 2;
+        user.updatePoint(user.getPoint() + earnedPoint);
         user.plushPomoComplete();
 
         return SessionResponseDto.of(session);

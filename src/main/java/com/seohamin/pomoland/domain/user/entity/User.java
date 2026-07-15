@@ -111,10 +111,6 @@ public class User {
         this.point = point;
     }
 
-    public void plushPoint() {
-        this.point += 1;
-    }
-
     public void plushPomoTry() {
         this.pomoTry += 1;
     }

@@ -214,12 +214,14 @@ public class UserService {
         if (
                 userSettingRequestDto.studyTime() != null
                 && userSettingRequestDto.studyTime() > 0
+                && userSettingRequestDto.studyTime() % 5 == 0
         ) {
             user.updateStudyTime(userSettingRequestDto.studyTime());
         }
         if (
                 userSettingRequestDto.restTime() != null
                 && userSettingRequestDto.restTime() > 0
+                && userSettingRequestDto.restTime() % 5 == 0
         ) {
             user.updateRestTime(userSettingRequestDto.restTime());
         }
