@@ -118,7 +118,7 @@ public class TileService {
             }
 
             // 6) 점령 가능한 가격인지 판단
-            if (tile.getDefensePower() > tileRequestDto.point()) {
+            if (tile.getDefensePower() >= tileRequestDto.point()) {
                 throw new CustomException(ExceptionCode.CANNOT_OCCUPY);
             }
         }
