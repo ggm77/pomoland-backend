@@ -26,6 +26,7 @@ public class JwtProvider {
     private static final String TOKEN_TYPE_CLAIM = "tokenType";
     private static final String ACCESS_TOKEN_TYPE = "access";
     private static final String REFRESH_TOKEN_TYPE = "refresh";
+    private static final String APPLE_ISSUER = "https://appleid.apple.com";
 
     @Value("${jwt.secret}")
     private String SECRET_KEY;
@@ -36,8 +37,8 @@ public class JwtProvider {
     @Value("${jwt.refreshToken_exprTime}")
     private Integer REFRESH_TOKEN_EXPIRATION_TIME;
 
-    @Value("${jwt.stateToken_exprTime}")
-    private Integer STATE_TOKEN_EXPIRATION_TIME;
+    @Value("${oauth2.apple.client_id}")
+    private String APPLE_CLIENT_ID;
 
     public String getTokenType() {
         return "Bearer";
@@ -92,30 +93,6 @@ public class JwtProvider {
                 .and()
                 .subject(userIdStr)
                 .claim(TOKEN_TYPE_CLAIM, REFRESH_TOKEN_TYPE)
-                .issuedAt(Date.from(now))
-                .expiration(Date.from(exp))
-                .signWith(key)
-                .compact();
-    }
-
-    /**
-     * CSRF방지를 위해 state 값이 필요한 경우
-     * 사용하는 JWT을 생성하는 메서드
-     * @return sub가 UUID인 5분짜리 JWT
-     */
-    public String createStateToken(){
-
-        final SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(SECRET_KEY));
-
-        final String sub = UUID.randomUUID().toString();
-        final Instant now = Instant.now();
-        final Instant exp = now.plusSeconds(STATE_TOKEN_EXPIRATION_TIME);
-
-        return Jwts.builder()
-                .header()
-                .type("JWT")
-                .and()
-                .subject(sub)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(exp))
                 .signWith(key)
@@ -183,6 +160,8 @@ public class JwtProvider {
         try {
             return Jwts.parser()
                     .verifyWith(publicKey)
+                    .requireIssuer(APPLE_ISSUER)
+                    .requireAudience(APPLE_CLIENT_ID)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();

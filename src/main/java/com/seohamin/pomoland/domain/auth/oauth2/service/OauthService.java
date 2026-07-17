@@ -2,6 +2,7 @@ package com.seohamin.pomoland.domain.auth.oauth2.service;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
@@ -19,12 +20,15 @@ import com.seohamin.pomoland.global.dto.JwtDto;
 import com.seohamin.pomoland.global.exception.CustomException;
 import com.seohamin.pomoland.global.exception.constants.ExceptionCode;
 import io.jsonwebtoken.Claims;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.PublicKey;
+import java.util.Collections;
 import java.util.Map;
 
 @Service
@@ -47,6 +51,16 @@ public class OauthService {
     private final AppleAuthClient appleAuthClient;
     private final JwtProvider jwtProvider;
     private final UserOauthService userOauthService;
+
+    // 구글 idToken 서명/발급자/audience를 검증하는 verifier (공개키를 캐싱하므로 인스턴스 재사용)
+    private GoogleIdTokenVerifier googleIdTokenVerifier;
+
+    @PostConstruct
+    private void initGoogleIdTokenVerifier() {
+        googleIdTokenVerifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
+                .setAudience(Collections.singletonList(GOOGLE_WEB_CLIENT_ID))
+                .build();
+    }
 
     /**
      * Apple OAuth2 진행하는 메서드
@@ -142,10 +156,10 @@ public class OauthService {
         // 4) 리프레시 토큰 변수에 저장
         final String googleRefreshToken = response.getRefreshToken();
 
-        // 5) 받아온 idToken에서 payload 추출
+        // 5) idToken 서명/발급자/audience 검증 후 payload 추출
         final GoogleIdToken.Payload payload;
         try {
-            final GoogleIdToken idToken = response.parseIdToken();
+            final GoogleIdToken idToken = googleIdTokenVerifier.verify(response.getIdToken());
 
             //검증 성공/실패 확인
             if(idToken == null) {
@@ -154,7 +168,7 @@ public class OauthService {
 
             payload = idToken.getPayload();
 
-        } catch (IOException ex){
+        } catch (GeneralSecurityException | IOException ex){
             throw new CustomException(ExceptionCode.GOOGLE_REQUEST_ERROR);
         }
 
