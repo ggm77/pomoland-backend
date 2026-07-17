@@ -14,10 +14,15 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class AppleAuthClient {
+
+    // WebClient 자체 타임아웃과 별개로, block()이 절대 무한정 대기하지 않도록 하는 최후의 방어선
+    private static final Duration BLOCK_TIMEOUT = Duration.ofSeconds(5);
 
     @Value("${oauth2.apple.public_key_uri}")
     private String APPLE_PUBLIC_KEY_URI;
@@ -43,7 +48,7 @@ public class AppleAuthClient {
                 .uri(APPLE_PUBLIC_KEY_URI)
                 .retrieve()
                 .bodyToMono(ApplePublicKeyResponseDto.class)
-                .block();
+                .block(BLOCK_TIMEOUT);
     }
 
     // https://appleid.apple.com/auth/token에 요청을 넣고 토큰을 받아온다.
@@ -68,7 +73,7 @@ public class AppleAuthClient {
                         })
                 )
                 .bodyToMono(AppleTokenResponseDto.class)
-                .block();
+                .block(BLOCK_TIMEOUT);
     }
 
     // https://appleid.apple.com/auth/revoke에 회원 탈퇴를 요청한다.
@@ -91,6 +96,6 @@ public class AppleAuthClient {
                         })
                 )
                 .toBodilessEntity()
-                .block();
+                .block(BLOCK_TIMEOUT);
     }
 }

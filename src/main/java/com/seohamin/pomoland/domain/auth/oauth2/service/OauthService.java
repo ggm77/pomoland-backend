@@ -31,6 +31,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class OauthService {
 
+    // 구글 토큰 엔드포인트 호출 시 커넥션/응답 타임아웃 (기본값에 의존하지 않고 명시)
+    private static final int GOOGLE_REQUEST_TIMEOUT_MILLIS = 5000;
+
     @Value("${oauth2.google.web_client_id}")
     private String GOOGLE_WEB_CLIENT_ID;
 
@@ -117,7 +120,7 @@ public class OauthService {
         // 3) code를 통해 구글에서 리프레시 토큰과 유저 정보 조회
         final GoogleTokenResponse response;
         try {
-            response = new GoogleAuthorizationCodeTokenRequest(
+            final GoogleAuthorizationCodeTokenRequest tokenRequest = new GoogleAuthorizationCodeTokenRequest(
                     new NetHttpTransport(),
                     new GsonFactory(),
                     "https://oauth2.googleapis.com/token",
@@ -125,7 +128,13 @@ public class OauthService {
                     GOOGLE_WEB_CLIENT_SECRET,
                     code,
                     GOOGLE_REDIRECT_URI
-            ).execute();
+            );
+            tokenRequest.setRequestInitializer(request -> {
+                request.setConnectTimeout(GOOGLE_REQUEST_TIMEOUT_MILLIS);
+                request.setReadTimeout(GOOGLE_REQUEST_TIMEOUT_MILLIS);
+            });
+
+            response = tokenRequest.execute();
         } catch (IOException ex) {
             throw new CustomException(ExceptionCode.GOOGLE_REQUEST_ERROR);
         }
