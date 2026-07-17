@@ -27,6 +27,8 @@ public class JwtProvider {
     private static final String ACCESS_TOKEN_TYPE = "access";
     private static final String REFRESH_TOKEN_TYPE = "refresh";
     private static final String APPLE_ISSUER = "https://appleid.apple.com";
+    // 서버 간 시계 오차를 감안한 JWT 만료/발급 시각 허용 오차
+    private static final long CLOCK_SKEW_SECONDS = 60;
 
     @Value("${jwt.secret}")
     private String SECRET_KEY;
@@ -139,6 +141,7 @@ public class JwtProvider {
         try{
             return Jwts.parser()
                     .verifyWith(key)
+                    .clockSkewSeconds(CLOCK_SKEW_SECONDS)
                     .build()
                     .parseSignedClaims(jwt)
                     .getPayload();
@@ -162,6 +165,7 @@ public class JwtProvider {
                     .verifyWith(publicKey)
                     .requireIssuer(APPLE_ISSUER)
                     .requireAudience(APPLE_CLIENT_ID)
+                    .clockSkewSeconds(CLOCK_SKEW_SECONDS)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();

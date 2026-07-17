@@ -12,7 +12,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(
@@ -65,11 +65,11 @@ public class UserOauth {
 
     @CreatedDate
     @Column(nullable = false)
-    private LocalDateTime linkedAt;
+    private Instant linkedAt;
 
     @LastModifiedDate
     @Column(nullable = false)
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 
     @Builder
     public UserOauth(
