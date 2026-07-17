@@ -34,6 +34,7 @@ public class TileService {
      * 전체 맵 조회하는 메서드
      * @return 맵에 등록된 타일 리스트
      */
+    @Transactional(readOnly = true)
     public MapResponseDto getMap() {
 
         // 1) 타일 전체 조회
@@ -57,6 +58,7 @@ public class TileService {
      * @param y y좌표
      * @return 상세 정보
      */
+    @Transactional(readOnly = true)
     public TileResponseDto getTile(
             final Integer x,
             final Integer y

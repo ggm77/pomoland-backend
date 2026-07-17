@@ -9,6 +9,7 @@ import com.seohamin.pomoland.global.exception.CustomException;
 import com.seohamin.pomoland.global.exception.constants.ExceptionCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +23,7 @@ public class TokenService {
      * @param tokenRefreshRequestDto 리프레시 토큰 담긴 DTO
      * @return JWT
      */
+    @Transactional(readOnly = true)
     public JwtDto refreshToken(final TokenRefreshRequestDto tokenRefreshRequestDto) {
         // 1) null 검사
         if (

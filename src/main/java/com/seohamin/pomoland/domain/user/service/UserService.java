@@ -53,6 +53,7 @@ public class UserService {
      * @param userIdStr 조회할 유저의 아이디 문자열
      * @return 유저 DTO
      */
+    @Transactional(readOnly = true)
     public UserResponseDto getUser(final String userIdStr) {
         // 1) null 검사
         if (userIdStr == null || userIdStr.isBlank()) {
