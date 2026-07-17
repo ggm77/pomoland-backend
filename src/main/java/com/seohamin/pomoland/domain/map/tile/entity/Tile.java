@@ -10,6 +10,10 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(
+        name = "uk_tile_x_y",
+        columnNames = {"x", "y"}
+))
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

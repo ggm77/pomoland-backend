@@ -11,6 +11,7 @@ import com.seohamin.pomoland.global.exception.CustomException;
 import com.seohamin.pomoland.global.exception.constants.ExceptionCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -148,7 +149,13 @@ public class TileService {
                     .isSpawnPoint(false)
                     .build();
 
-            tileRepository.save(newTile);
+            // 동시에 같은 빈 타일을 점령하면 (x, y) 유니크 제약에 걸릴 수 있어
+            // saveAndFlush로 즉시 충돌을 확인하고, 충돌 시 이미 다른 유저가 점령한 것으로 처리한다.
+            try {
+                tileRepository.saveAndFlush(newTile);
+            } catch (DataIntegrityViolationException e) {
+                throw new CustomException(ExceptionCode.TILE_ALREADY_OCCUPIED);
+            }
         }
     }
 

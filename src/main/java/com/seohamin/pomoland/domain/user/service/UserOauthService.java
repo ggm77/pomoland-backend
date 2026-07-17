@@ -11,6 +11,7 @@ import com.seohamin.pomoland.global.exception.CustomException;
 import com.seohamin.pomoland.global.exception.constants.ExceptionCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -67,17 +68,32 @@ public class UserOauthService {
             final User savedUser = userRepository.save(user);
 
             // 6) UserOauth 엔티티 생성
-            final UserOauth savedUserOauth = userOauthRepository.save(
-                    UserOauth.builder()
-                            .user(savedUser)
-                            .provider(userOauthAccountsRequestDto.provider())
-                            .providerUserId(userOauthAccountsRequestDto.providerUserId())
-                            .email(userOauthAccountsRequestDto.email())
-                            .name(userOauthAccountsRequestDto.name())
-                            .profileImage(userOauthAccountsRequestDto.profileImage())
-                            .refreshToken(userOauthAccountsRequestDto.refreshToken())
-                            .build()
-            );
+            // 동시에 같은 소셜 계정으로 첫 로그인 요청이 들어오면 (provider, providerUserId) 유니크 제약에 걸릴 수 있어
+            // saveAndFlush로 즉시 충돌을 확인한다.
+            final UserOauth savedUserOauth;
+            try {
+                savedUserOauth = userOauthRepository.saveAndFlush(
+                        UserOauth.builder()
+                                .user(savedUser)
+                                .provider(userOauthAccountsRequestDto.provider())
+                                .providerUserId(userOauthAccountsRequestDto.providerUserId())
+                                .email(userOauthAccountsRequestDto.email())
+                                .name(userOauthAccountsRequestDto.name())
+                                .profileImage(userOauthAccountsRequestDto.profileImage())
+                                .refreshToken(userOauthAccountsRequestDto.refreshToken())
+                                .build()
+                );
+            } catch (DataIntegrityViolationException e) {
+                // 동시 요청 중 다른 트랜잭션이 먼저 가입을 완료한 경우: 방금 만든 User는 버리고 기존 계정을 반환한다.
+                userRepository.delete(savedUser);
+
+                return UserOauthAccountsResponseDto.of(
+                        userOauthRepository.findByProviderAndProviderUserId(
+                                userOauthAccountsRequestDto.provider(),
+                                userOauthAccountsRequestDto.providerUserId()
+                        ).orElseThrow(() -> e)
+                );
+            }
 
             // 7) 리프레시 토큰 저장 실패 시 로그 찍기
             if(userOauthAccountsRequestDto.refreshToken() == null || userOauthAccountsRequestDto.refreshToken().isEmpty()) {

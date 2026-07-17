@@ -10,6 +10,7 @@ import com.seohamin.pomoland.domain.user.repository.UserRepository;
 import com.seohamin.pomoland.global.exception.CustomException;
 import com.seohamin.pomoland.global.exception.constants.ExceptionCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -161,7 +162,13 @@ public class UserService {
                 .build();
 
         // 7) 저장
-        tileRepository.save(tile);
+        // 동시에 같은 좌표에 스폰포인트/타일이 생성되면 (x, y) 유니크 제약에 걸릴 수 있어
+        // saveAndFlush로 즉시 충돌을 확인하고, 충돌 시 이미 점령된 것으로 처리한다.
+        try {
+            tileRepository.saveAndFlush(tile);
+        } catch (DataIntegrityViolationException e) {
+            throw new CustomException(ExceptionCode.TILE_ALREADY_OCCUPIED);
+        }
     }
 
     /**
