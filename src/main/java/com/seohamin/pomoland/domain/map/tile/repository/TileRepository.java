@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface TileRepository extends JpaRepository<Tile, Integer> {
+public interface TileRepository extends JpaRepository<Tile, Long> {
     Optional<Tile> findByOwnerIdAndIsSpawnPoint(final Long ownerId, final Boolean isSpawnPoint);
     boolean existsByOwnerIdAndIsSpawnPoint(final Long ownerId, final Boolean isSpawnPoint);
     Optional<Tile> findByXAndY(final Integer x, final Integer y);
