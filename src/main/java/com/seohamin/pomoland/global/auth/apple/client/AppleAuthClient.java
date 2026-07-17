@@ -68,7 +68,7 @@ public class AppleAuthClient {
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(String.class).flatMap(body -> {
                             // Apple이 보내주는 {"error": "...", "error_description": "..."} 확인
-                            log.error("Apple Token API Error: ", body);
+                            log.error("Apple Token API Error: {}", body);
                             return Mono.error(new RuntimeException("Apple Login Failed: " + body));
                         })
                 )
@@ -91,7 +91,7 @@ public class AppleAuthClient {
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(String.class).flatMap(body -> {
-                            log.error("Apple Token Revoke API Error: ", body);
+                            log.error("Apple Token Revoke API Error: {}", body);
                             return Mono.error(new RuntimeException("Apple Token Revoke Failed: "+body));
                         })
                 )
