@@ -1,5 +1,6 @@
 package com.seohamin.pomoland.domain.user.entity;
 
+import com.seohamin.pomoland.global.crypto.OauthRefreshTokenConverter;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -55,7 +56,10 @@ public class UserOauth {
     private String profileImage;
 
     //oauth에서 제공하는 리프레시 토큰 (unlink시 필요함)
-    @Column(length = 4100, nullable = true)
+    //DB 유출 시 서드파티 토큰까지 유출되는 것을 막기 위해 AES-GCM으로 암호화해서 저장함
+    //컬럼 길이는 암호화(IV+태그)와 base64 인코딩으로 늘어난 길이를 담을 수 있도록 여유있게 설정
+    @Convert(converter = OauthRefreshTokenConverter.class)
+    @Column(length = 5600, nullable = true)
     @Size(max = 4100)
     private String refreshToken;
 

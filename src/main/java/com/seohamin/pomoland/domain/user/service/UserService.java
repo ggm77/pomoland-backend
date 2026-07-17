@@ -6,10 +6,14 @@ import com.seohamin.pomoland.domain.map.tile.repository.TileRepository;
 import com.seohamin.pomoland.domain.ranking.repository.StudyDailyStatRepository;
 import com.seohamin.pomoland.domain.user.dto.*;
 import com.seohamin.pomoland.domain.user.entity.User;
+import com.seohamin.pomoland.domain.user.entity.UserOauth;
+import com.seohamin.pomoland.domain.user.repository.UserOauthRepository;
 import com.seohamin.pomoland.domain.user.repository.UserRepository;
+import com.seohamin.pomoland.global.auth.apple.client.AppleAuthClient;
 import com.seohamin.pomoland.global.exception.CustomException;
 import com.seohamin.pomoland.global.exception.constants.ExceptionCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -20,6 +24,7 @@ import java.time.ZoneId;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserService {
 
     // 하루 경계 계산 기준 타임존
@@ -28,6 +33,8 @@ public class UserService {
     private static final int WEEKLY_STUDY_TIME_RANGE_DAYS = 7;
     // 공부시간/쉬는시간 설정 상한 (24시간, 분 단위)
     private static final int MAX_SETTING_TIME_MINUTES = 24 * 60;
+    // Apple OAuth provider 식별자
+    private static final String APPLE_PROVIDER = "apple";
 
     @Value("${map.x_size}")
     private Integer X_SIZE;
@@ -38,6 +45,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final TileRepository tileRepository;
     private final StudyDailyStatRepository studyDailyStatRepository;
+    private final UserOauthRepository userOauthRepository;
+    private final AppleAuthClient appleAuthClient;
 
     /**
      * 유저 아이디로 유저 조회하는 메서드
@@ -124,10 +133,23 @@ public class UserService {
         // 2) 파싱
         final Long userId = Long.parseLong(userIdStr);
 
-        // 3) StudyDailyStat은 User와 cascade 연관관계가 없어 FK 제약 위반을 막기 위해 먼저 삭제
+        // 3) Apple 연동 계정이면 탈퇴 전 Apple 토큰 revoke 시도 (Sign in with Apple 앱의 계정 삭제 요건)
+        // Apple 쪽 장애/오류로 탈퇴 자체가 막히면 안 되므로 실패해도 계속 진행한다
+        userOauthRepository.findByMember_IdAndProvider(userId, APPLE_PROVIDER)
+                .map(UserOauth::getRefreshToken)
+                .filter(refreshToken -> refreshToken != null && !refreshToken.isBlank())
+                .ifPresent(refreshToken -> {
+                    try {
+                        appleAuthClient.revokeToken(refreshToken);
+                    } catch (Exception ex) {
+                        log.warn("Apple 토큰 revoke 실패. userId={}", userId, ex);
+                    }
+                });
+
+        // 4) StudyDailyStat은 User와 cascade 연관관계가 없어 FK 제약 위반을 막기 위해 먼저 삭제
         studyDailyStatRepository.deleteByMemberId(userId);
 
-        // 4) 삭제
+        // 5) 삭제
         userRepository.deleteById(userId);
     }
 
