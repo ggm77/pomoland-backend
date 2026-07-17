@@ -26,6 +26,8 @@ public class UserService {
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
     // 주간 공부시간 집계 기간 (오늘 포함 최근 7일)
     private static final int WEEKLY_STUDY_TIME_RANGE_DAYS = 7;
+    // 공부시간/쉬는시간 설정 상한 (24시간, 분 단위)
+    private static final int MAX_SETTING_TIME_MINUTES = 24 * 60;
 
     @Value("${map.x_size}")
     private Integer X_SIZE;
@@ -218,6 +220,7 @@ public class UserService {
         if (
                 userSettingRequestDto.studyTime() != null
                 && userSettingRequestDto.studyTime() > 0
+                && userSettingRequestDto.studyTime() <= MAX_SETTING_TIME_MINUTES
                 && userSettingRequestDto.studyTime() % 5 == 0
         ) {
             user.updateStudyTime(userSettingRequestDto.studyTime());
@@ -225,6 +228,7 @@ public class UserService {
         if (
                 userSettingRequestDto.restTime() != null
                 && userSettingRequestDto.restTime() > 0
+                && userSettingRequestDto.restTime() <= MAX_SETTING_TIME_MINUTES
                 && userSettingRequestDto.restTime() % 5 == 0
         ) {
             user.updateRestTime(userSettingRequestDto.restTime());
