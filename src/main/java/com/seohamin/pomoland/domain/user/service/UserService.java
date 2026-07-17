@@ -10,6 +10,7 @@ import com.seohamin.pomoland.domain.user.repository.UserRepository;
 import com.seohamin.pomoland.global.exception.CustomException;
 import com.seohamin.pomoland.global.exception.constants.ExceptionCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,12 @@ public class UserService {
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
     // 주간 공부시간 집계 기간 (오늘 포함 최근 7일)
     private static final int WEEKLY_STUDY_TIME_RANGE_DAYS = 7;
+
+    @Value("${map.x_size}")
+    private Integer X_SIZE;
+
+    @Value("${map.y_size}")
+    private Integer Y_SIZE;
 
     private final UserRepository userRepository;
     private final TileRepository tileRepository;
@@ -132,7 +139,10 @@ public class UserService {
             final UserSpawnPointRequestDto userSpawnPointRequestDto
     ) {
         // 1) null 검사
-        if (userSpawnPointRequestDto == null || userIdStr == null || userIdStr.isBlank()) {
+        if (
+                userSpawnPointRequestDto == null || userIdStr == null || userIdStr.isBlank()
+                || userSpawnPointRequestDto.x() == null || userSpawnPointRequestDto.y() == null
+        ) {
             throw new CustomException(ExceptionCode.INVALID_REQUEST);
         }
 
@@ -140,6 +150,11 @@ public class UserService {
         final Long userId = Long.parseLong(userIdStr);
         final Integer x = userSpawnPointRequestDto.x();
         final Integer y = userSpawnPointRequestDto.y();
+
+        // 2-1) 좌표 범위 검사 (맵 밖 좌표에 스폰포인트가 생기는 것을 방지)
+        if (x < 0 || y < 0 || x >= X_SIZE || y >= Y_SIZE) {
+            throw new CustomException(ExceptionCode.INVALID_REQUEST);
+        }
 
         // 3) 유저 조회
         final User user = userRepository.findById(userId)
