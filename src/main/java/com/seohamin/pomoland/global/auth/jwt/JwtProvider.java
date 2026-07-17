@@ -190,18 +190,19 @@ public class JwtProvider {
         try{
             final String header = token.split("\\.")[0];
             return new ObjectMapper().readValue(decode(header), Map.class);
-        } catch (JsonProcessingException ex) {
+        } catch (JsonProcessingException | IllegalArgumentException ex) {
             throw new CustomException(ExceptionCode.INVALID_TOKEN);
         }
     }
 
     /**
-     * base64로 인코딩 된 부분을 디코딩 하는 메서드
-     * @param base64 base64로 인코딩 된 문자열
+     * base64url로 인코딩 된 JWT 헤더 부분을 디코딩 하는 메서드
+     * (JWT는 표준 Base64가 아닌 Base64URL 인코딩을 사용함)
+     * @param base64Url base64url로 인코딩 된 문자열
      * @return 디코딩된 문자열
      */
-    public String decode(final String base64){
-        return new String(Base64.getDecoder().decode(base64), StandardCharsets.UTF_8);
+    public String decode(final String base64Url){
+        return new String(Base64.getUrlDecoder().decode(base64Url), StandardCharsets.UTF_8);
     }
 
     /**
