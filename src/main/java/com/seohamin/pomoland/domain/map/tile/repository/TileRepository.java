@@ -1,10 +1,12 @@
 package com.seohamin.pomoland.domain.map.tile.repository;
 
 import com.seohamin.pomoland.domain.map.tile.entity.Tile;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface TileRepository extends JpaRepository<Tile, Integer> {
@@ -29,5 +31,27 @@ public interface TileRepository extends JpaRepository<Tile, Integer> {
             "OR (t.x = :x AND t.y = :y - 1) " +
             "OR (t.x = :x AND t.y = :y + 1))")
     boolean isOccupiable(@Param("x") final Integer x, @Param("y") final Integer y, @Param("ownerId") final Long ownerId);
+
+    /**
+     * 주어진 유저들이 보유한 타일 수를 각각 조회하는 메서드
+     * @param ownerIds 조회할 유저 아이디 목록
+     * @return 유저별 보유 타일 수
+     */
+    @Query("SELECT t.owner.id as ownerId, COUNT(t) as tileCount " +
+            "FROM Tile t " +
+            "WHERE t.owner.id IN :ownerIds " +
+            "GROUP BY t.owner.id")
+    List<TileCountProjection> countTilesByOwnerIds(@Param("ownerIds") final List<Long> ownerIds);
+
+    /**
+     * 보유 타일 수 기준 랭킹을 조회하는 메서드
+     * @param pageable 랭킹 크기 제한용 페이지 정보
+     * @return 유저별 보유 타일 수 랭킹 (내림차순)
+     */
+    @Query("SELECT t.owner.id as ownerId, COUNT(t) as tileCount " +
+            "FROM Tile t " +
+            "GROUP BY t.owner.id " +
+            "ORDER BY COUNT(t) DESC")
+    List<TileCountProjection> findTileCountRanking(final Pageable pageable);
 
 }

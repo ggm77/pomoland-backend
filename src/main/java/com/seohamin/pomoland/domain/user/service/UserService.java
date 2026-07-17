@@ -3,8 +3,7 @@ package com.seohamin.pomoland.domain.user.service;
 import com.seohamin.pomoland.domain.map.tile.dto.TileResponseDto;
 import com.seohamin.pomoland.domain.map.tile.entity.Tile;
 import com.seohamin.pomoland.domain.map.tile.repository.TileRepository;
-import com.seohamin.pomoland.domain.session.entity.Session;
-import com.seohamin.pomoland.domain.session.repository.SessionRepository;
+import com.seohamin.pomoland.domain.ranking.repository.StudyDailyStatRepository;
 import com.seohamin.pomoland.domain.user.dto.*;
 import com.seohamin.pomoland.domain.user.entity.User;
 import com.seohamin.pomoland.domain.user.repository.UserRepository;
@@ -14,11 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -26,12 +22,12 @@ public class UserService {
 
     // 하루 경계 계산 기준 타임존
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
-    // 주간 공부시간 집계 기간 (최근 7일 롤링)
+    // 주간 공부시간 집계 기간 (오늘 포함 최근 7일)
     private static final int WEEKLY_STUDY_TIME_RANGE_DAYS = 7;
 
     private final UserRepository userRepository;
     private final TileRepository tileRepository;
-    private final SessionRepository sessionRepository;
+    private final StudyDailyStatRepository studyDailyStatRepository;
 
     /**
      * 유저 아이디로 유저 조회하는 메서드
@@ -56,10 +52,10 @@ public class UserService {
                 .orElse(null);
 
         // 5) 하루/일주일 공부시간 집계
-        final Instant todayStart = LocalDate.now(KST).atStartOfDay(KST).toInstant();
-        final Instant weekStart = Instant.now().minus(Duration.ofDays(WEEKLY_STUDY_TIME_RANGE_DAYS));
-        final int dailyStudyTime = sumCompletedStudyMinutes(userId, todayStart);
-        final int weeklyStudyTime = sumCompletedStudyMinutes(userId, weekStart);
+        final LocalDate today = LocalDate.now(KST);
+        final LocalDate weekStart = today.minusDays(WEEKLY_STUDY_TIME_RANGE_DAYS - 1);
+        final int dailyStudyTime = (int) (studyDailyStatRepository.sumStudySecondsByMemberIdAndDate(userId, today) / 60);
+        final int weeklyStudyTime = (int) (studyDailyStatRepository.sumStudySecondsByMemberIdSince(userId, weekStart) / 60);
 
         return new UserResponseDto(
                 user.getId(),
@@ -72,23 +68,6 @@ public class UserService {
                 user.getPomoComplete(),
                 TileResponseDto.of(spawnPoint)
         );
-    }
-
-    /**
-     * 특정 시점 이후에 완료된 세션들의 공부시간 합을 분 단위로 계산하는 메서드
-     * @param userId 유저 아이디
-     * @param since 집계 시작 시점
-     * @return 완료된 세션들의 공부시간 합 (분)
-     */
-    private int sumCompletedStudyMinutes(final Long userId, final Instant since) {
-        final List<Session> sessions =
-                sessionRepository.findAllByMemberIdAndIsCompleteTrueAndStartAtGreaterThanEqual(userId, since);
-
-        final long totalSeconds = sessions.stream()
-                .mapToLong(session -> Duration.between(session.getStartAt(), session.getEndAt()).getSeconds())
-                .sum();
-
-        return (int) (totalSeconds / 60);
     }
 
     /**

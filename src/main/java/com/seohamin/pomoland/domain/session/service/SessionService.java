@@ -1,5 +1,6 @@
 package com.seohamin.pomoland.domain.session.service;
 
+import com.seohamin.pomoland.domain.ranking.repository.StudyDailyStatRepository;
 import com.seohamin.pomoland.domain.session.dto.SessionResponseDto;
 import com.seohamin.pomoland.domain.session.entity.Session;
 import com.seohamin.pomoland.domain.session.repository.SessionRepository;
@@ -13,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,9 +25,12 @@ public class SessionService {
 
     // heartbeat 시간
     private static final int HEARTBEAT_INTERVAL = 30;
+    // 하루 경계 계산 기준 타임존
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
     private final UserRepository userRepository;
     private final SessionRepository sessionRepository;
+    private final StudyDailyStatRepository studyDailyStatRepository;
     private final SessionExpireService sessionExpireService;
 
     /**
@@ -267,10 +273,15 @@ public class SessionService {
         session.updateIsComplete(true);
 
         // 12) 포인트 지급 및 완료 회수 추가 (5분당 2포인트, 25분당 10포인트)
-        final long sessionMinutes = Duration.between(session.getStartAt(), session.getEndAt()).toMinutes();
+        final Duration sessionDuration = Duration.between(session.getStartAt(), session.getEndAt());
+        final long sessionMinutes = sessionDuration.toMinutes();
         final int earnedPoint = (int) (sessionMinutes / 5) * 2;
         user.updatePoint(user.getPoint() + earnedPoint);
         user.plushPomoComplete();
+
+        // 13) 일별 공부시간 집계 갱신 (랭킹, 일간/주간 공부시간 조회용)
+        final LocalDate studyDate = session.getStartAt().atZone(KST).toLocalDate();
+        studyDailyStatRepository.upsertStudySeconds(userId, studyDate, sessionDuration.getSeconds());
 
         return SessionResponseDto.of(session);
     }
