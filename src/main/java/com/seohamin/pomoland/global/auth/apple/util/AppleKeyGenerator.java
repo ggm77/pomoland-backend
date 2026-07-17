@@ -5,6 +5,7 @@ import com.seohamin.pomoland.global.auth.apple.dto.key.ApplePublicKeyResponseDto
 import com.seohamin.pomoland.global.exception.CustomException;
 import com.seohamin.pomoland.global.exception.constants.ExceptionCode;
 import io.jsonwebtoken.Jwts;
+import jakarta.annotation.PostConstruct;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
@@ -22,14 +23,18 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
 
 @Component
 public class AppleKeyGenerator {
+
+    // Apple client secret의 최대 유효기간(Apple 정책상 6개월 이하, 30일로 발급) 및 만료 전 갱신 여유
+    private static final Duration CLIENT_SECRET_TTL = Duration.ofDays(30);
+    private static final Duration CLIENT_SECRET_REFRESH_MARGIN = Duration.ofHours(1);
 
     @Value("${oauth2.apple.key_id}")
     private String kid;
@@ -46,27 +51,58 @@ public class AppleKeyGenerator {
     @Value("${oauth2.apple.key_path}")
     private Resource keyPath;
 
+    // 매 요청마다 디스크에서 다시 읽지 않도록 부팅 시 1회 로드해서 캐시
+    private PrivateKey privateKey;
+
+    private String cachedClientSecret;
+    private Instant cachedClientSecretExpiresAt;
+
+    /**
+     * 애플 인증키(p8) 파일을 부팅 시 1회 읽어 캐시하는 메서드
+     * 파일이 없거나 형식이 잘못됐으면 로그인 시점이 아니라 부팅 시점에 바로 실패시킨다
+     */
+    @PostConstruct
+    private void init() {
+        this.privateKey = loadPrivateKeyFromDisk();
+    }
+
     /**
      * 애플 client secrete을 생성하는 메서드
+     * 서명 결과는 만료 전까지 캐시해서 재사용한다 (p8 서명은 매 로그인마다 다시 할 필요가 없음)
      * @return JWT로 된 client secrete
      */
-    public String generateClientSecrete(){
-        final Date expirationDate = Date.from(LocalDateTime.now().plusDays(30).atZone(ZoneId.systemDefault()).toInstant());
+    public synchronized String generateClientSecrete(){
+        final Instant now = Instant.now();
 
-        return Jwts.builder()
+        if (
+                cachedClientSecret != null
+                && cachedClientSecretExpiresAt != null
+                && now.isBefore(cachedClientSecretExpiresAt.minus(CLIENT_SECRET_REFRESH_MARGIN))
+        ) {
+            return cachedClientSecret;
+        }
+
+        final Instant expiresAt = now.plus(CLIENT_SECRET_TTL);
+
+        final String clientSecret = Jwts.builder()
                 .header()
                 .add("kid", kid)
                 .add("alg", "ES256")
                 .and()
                 .issuer(teamId)
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(expirationDate)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiresAt))
                 .audience()
                 .add(baseUrl)
                 .and()
                 .subject(clientId)
-                .signWith(getPrivateKey(), Jwts.SIG.ES256)
+                .signWith(privateKey, Jwts.SIG.ES256)
                 .compact();
+
+        this.cachedClientSecret = clientSecret;
+        this.cachedClientSecretExpiresAt = expiresAt;
+
+        return clientSecret;
     }
 
     /**
@@ -95,7 +131,7 @@ public class AppleKeyGenerator {
      * PrivateKey를 생성하는 메서드
      * @return 애플 PrivateKey
      */
-    private PrivateKey getPrivateKey(){
+    private PrivateKey loadPrivateKeyFromDisk(){
         try (final Reader reader = new InputStreamReader(keyPath.getInputStream())){
 
             PEMParser pemParser = new PEMParser(reader);
@@ -105,7 +141,7 @@ public class AppleKeyGenerator {
             return converter.getPrivateKey(keyInfo);
 
         } catch (IOException ex){
-            throw new CustomException(ExceptionCode.INTERNAL_SERVER_ERROR);
+            throw new IllegalStateException("애플 인증키(p8) 로드 실패: " + keyPath, ex);
         }
     }
 
