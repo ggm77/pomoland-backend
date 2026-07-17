@@ -115,7 +115,10 @@ public class UserService {
         // 2) 파싱
         final Long userId = Long.parseLong(userIdStr);
 
-        // 3) 삭제
+        // 3) StudyDailyStat은 User와 cascade 연관관계가 없어 FK 제약 위반을 막기 위해 먼저 삭제
+        studyDailyStatRepository.deleteByMemberId(userId);
+
+        // 4) 삭제
         userRepository.deleteById(userId);
     }
 

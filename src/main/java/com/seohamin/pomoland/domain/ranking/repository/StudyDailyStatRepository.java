@@ -35,6 +35,15 @@ public interface StudyDailyStatRepository extends JpaRepository<StudyDailyStat, 
     );
 
     /**
+     * 해당 유저의 공부시간 집계 기록을 모두 삭제하는 메서드
+     * StudyDailyStat은 User와 연관관계 매핑(cascade)이 없어 회원 탈퇴 시 별도로 호출해야 함
+     * @param memberId 유저 아이디
+     */
+    @Modifying
+    @Transactional
+    void deleteByMemberId(final Long memberId);
+
+    /**
      * 해당 유저의 특정 날짜 공부시간 합(초)을 조회하는 메서드
      * @param memberId 유저 아이디
      * @param studyDate 조회할 날짜
