@@ -55,6 +55,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
+            //액세스 토큰이 아니면(리프레시 토큰 등) 익명으로 진행
+            //authorities 클레임 유무 같은 우연에 기대지 않고 명시적으로 토큰 타입을 검증함
+            if (!jwtProvider.isAccessToken(jwtClaims)) {
+                filterChain.doFilter(httpServletRequest, httpServletResponse);
+                return;
+            }
+
             //토큰에서 Claims 추출
             final List<SimpleGrantedAuthority> authorities = jwtProvider.getAuthorities(jwtClaims);
 

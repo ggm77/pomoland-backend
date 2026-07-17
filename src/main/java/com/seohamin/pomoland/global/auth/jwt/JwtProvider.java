@@ -141,6 +141,16 @@ public class JwtProvider {
     }
 
     /**
+     * 액세스 토큰인지 검사하는 메서드
+     * (리프레시 토큰 등 다른 종류의 토큰이 API 인증에 쓰이는 것을 막기 위함)
+     * @param claims JWT의 claims
+     * @return 액세스 토큰이면 true
+     */
+    public boolean isAccessToken(final Claims claims){
+        return ACCESS_TOKEN_TYPE.equals(claims.get(TOKEN_TYPE_CLAIM, String.class));
+    }
+
+    /**
      * JWT에서 claims만 얻어오는 메서드
      * @param jwt JWT
      * @return JWT의 Claims
