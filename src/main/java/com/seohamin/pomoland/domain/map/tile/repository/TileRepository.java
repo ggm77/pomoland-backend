@@ -14,6 +14,7 @@ public interface TileRepository extends JpaRepository<Tile, Long> {
     boolean existsByOwnerIdAndIsSpawnPoint(final Long ownerId, final Boolean isSpawnPoint);
     Optional<Tile> findByXAndY(final Integer x, final Integer y);
     boolean existsByXAndY(final Integer x, final Integer y);
+    long countByOwnerId(final Long ownerId);
 
     /**
      * 해당 좌표가 점령 가능한 위치인지 판단하는 메서드

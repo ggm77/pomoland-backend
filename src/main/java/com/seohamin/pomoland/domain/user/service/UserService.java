@@ -79,7 +79,7 @@ public class UserService {
         return new UserResponseDto(
                 user.getId(),
                 user.getUsername(),
-                user.getTiles().size(),
+                (int) tileRepository.countByOwnerId(userId),
                 dailyStudyTime,
                 weeklyStudyTime,
                 user.getPoint(),
